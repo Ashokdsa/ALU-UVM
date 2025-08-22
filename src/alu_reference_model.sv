@@ -42,7 +42,7 @@ class alu_reference extends uvm_component;
   
   function void write(alu_sequence_item t);
     alu_sequence_item drv = t;
-    input_store.push_back(drv);
+    input_store.push_back(t);
     `uvm_info(get_name,"[DRV] GOT INPUTS",UVM_MEDIUM)
   endfunction
 
@@ -241,84 +241,66 @@ class alu_reference extends uvm_component;
               end
               4'd9: //INC_MUL
               begin
-                if(count3 > 0 &&  count3 < 3)
-                begin
-                  count3++;
-                  `uvm_info(get_name,$sformatf("COUNT = %0d",count3),UVM_MEDIUM);
+                if(count == 0)
+                  {valid_b,valid_a} = ref_item.inp_valid;
+                else begin
+                  valid_a = ref_item.inp_valid[0] == 1'b1 ? 1 : valid_a;
+                  valid_b = ref_item.inp_valid[1] == 1'b1 ? 1 : valid_b;
                 end
-                else if(count3 >= 3)
+                de = delay();
+                if(count == 0 && valid_a && valid_b) 
                 begin
+                  correct.put(1);
+                  ref_item.res = ((temp.opa + 1) & {`DWIDTH{1'b1}}) * ((temp.opb + 1) & {`DWIDTH{1'b1}});
+                  ref_item.err = 1'bz;
+                  count = 0;
+                end
+                else if(de == 2)
+                begin
+                  ref_item.res = ((temp.opa + 1) & {`DWIDTH{1'b1}}) * ((temp.opb + 1) & {`DWIDTH{1'b1}});
+                  ref_item.err = 1'bz;
+                  count = 0;
+                end
+                else if(de == 0)
+                begin
+                  ref_item.res = 'bz;
+                  ref_item.err = 1'b1;
                   count3 = 0;
                   count = 0;
-                  ref_item.res = ((temp.opa + 1) & {`DWIDTH{1'b1}}) * ((temp.opb + 1) & {`DWIDTH{1'b1}});
                   correct.put(1);
-                end
-                else
-                begin
-                  if(count == 0)
-                    {valid_b,valid_a} = ref_item.inp_valid;
-                  else begin
-                    valid_a = ref_item.inp_valid[0] == 1'b1 ? 1 : valid_a;
-                    valid_b = ref_item.inp_valid[1] == 1'b1 ? 1 : valid_b;
-                  end
-                  de = delay();
-                  if(de == 2)
-                  begin
-                    ref_item.res = ((temp.opa + 1) & {`DWIDTH{1'b1}}) * ((temp.opb + 1) & {`DWIDTH{1'b1}});
-                    ref_item.err = 1'bz;
-                    count3++;
-                    count = 0;
-                  end
-                  else if(de == 0)
-                  begin
-                    ref_item.res = 'bz;
-                    ref_item.err = 1'b1;
-                    count3 = 0;
-                    count = 0;
-                    correct.put(1);
-                  end
                 end
               end
               4'd10: //SH_MUL
               begin
-                if(count3 > 0 && count3 < 3)
+                if(count == 0)
                 begin
-                  count3++;
-                  `uvm_info(get_name,$sformatf("COUNT = %0d",count3),UVM_MEDIUM);
+                  {valid_b,valid_a} = ref_item.inp_valid;
                 end
-                else if(count3 >= 3)
+                else begin
+                  valid_a = ref_item.inp_valid[0] == 1'b1 ? 1 : valid_a;
+                  valid_b = ref_item.inp_valid[1] == 1'b1 ? 1 : valid_b;
+                end
+                de = delay();
+                if(count == 0 && valid_a && valid_b) 
                 begin
                   correct.put(1);
+                  ref_item.res = ((temp.opa << 1) & {`DWIDTH{1'b1}}) * (temp.opb);
+                  ref_item.err = 1'bz;
+                  count = 0;
+                end
+                if(de == 2)
+                begin
+                  ref_item.res = ((temp.opa << 1) & {`DWIDTH{1'b1}}) * (temp.opb);
+                  ref_item.err = 1'bz;
+                  count = 0;
+                end
+                else if(de == 0)
+                begin
+                  ref_item.res = 'bz;
+                  ref_item.err = 1'b1;
                   count3 = 0;
                   count = 0;
-                  ref_item.res = ((temp.opa << 1) & {`DWIDTH{1'b1}}) * (temp.opb);
-                end
-                else
-                begin
-                  if(count == 0)
-                  begin
-                    {valid_b,valid_a} = ref_item.inp_valid;
-                  end
-                  else begin
-                    valid_a = ref_item.inp_valid[0] == 1'b1 ? 1 : valid_a;
-                    valid_b = ref_item.inp_valid[1] == 1'b1 ? 1 : valid_b;
-                  end
-                  de = delay();
-                  if(de == 2)
-                  begin
-                    ref_item.res = ((temp.opa << 1) & {`DWIDTH{1'b1}}) * (temp.opb);
-                    ref_item.err = 1'bz;
-                    count3++;
-                    count = 0;
-                  end
-                  else if(de == 0)
-                  begin
-                    ref_item.res = 'bz;
-                    ref_item.err = 1'b1;
-                    count3 = 0;
-                    count = 0;
-                    correct.put(1);
-                  end
+                  correct.put(1);
                 end
               end
               default:
@@ -608,7 +590,7 @@ class alu_reference extends uvm_component;
       count = 0;
       return 0;
     end
-    if(count >= 16)
+    if(count >= 15)
     begin
       count = 0;
       if(valid_a && valid_b)
@@ -616,7 +598,7 @@ class alu_reference extends uvm_component;
       else
         return 0;//time passed trigger err
     end
-    else if(count < 16)
+    else if(count < 15)
     begin
       if(valid_a && valid_b)
       begin

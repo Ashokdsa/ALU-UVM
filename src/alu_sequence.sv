@@ -487,7 +487,6 @@ endclass
 
 //NORMAL MULTIPLICATION SEQUENCE 
 class alu_mult_sequence extends base_sequence;
-  int count3;
   `uvm_object_utils(alu_mult_sequence)
   
   function new(string name = "mult_seq");
@@ -499,7 +498,7 @@ class alu_mult_sequence extends base_sequence;
       void'(previ.pop_front());
       $display("-------------------------------------------------------------MULTIPLICATION SEQUENCE STARTED-------------------------------------------------------------");
     seq = alu_sequence_item::type_id::create("mult_seq");
-    repeat(16) begin
+    repeat(6) begin
       seq.normal_cmd_mode.constraint_mode(0);
       wait_for_grant();
       seq.exec = 7;
@@ -516,27 +515,8 @@ class alu_mult_sequence extends base_sequence;
       send_request(seq);
       `uvm_info(get_name,"SEQUENCE SENT",UVM_DEBUG)
       wait_for_item_done();
-      if(count3 >= 3)
-        previ.push_back({seq.mode,seq.cmd});
+      previ.push_back({seq.mode,seq.cmd});
       sizing();
-      strt();
-    end
-  endtask
-
-  task strt();
-    if(count3 < 3)
-    begin
-      seq.cmd.rand_mode(0);
-      seq.mode.rand_mode(0);
-      seq.inp_valid.rand_mode(0);
-      count3++;
-    end
-    else if(count3 >= 3)
-    begin
-      seq.cmd.rand_mode(1);
-      seq.mode.rand_mode(1);
-      seq.inp_valid.rand_mode(1);
-      count3 = 0;
     end
   endtask
 
@@ -553,13 +533,12 @@ endclass
 //MULT WITHIN 16 CLK CYCLE SEQUENCE 
 class alu_mult_time_sequence extends base_sequence; //*
   int count;
-  int count3;
   bit valid_a,valid_b;
   `uvm_object_utils(alu_mult_time_sequence)
   
   function new(string name = "mult_time_seq");
     super.new(name);
-    assert(std::randomize(count) with {count inside {[1:15]};}) `uvm_info(get_name,$sformatf("count = %0d",count),UVM_DEBUG) else `uvm_fatal(get_name,"No Delay")
+    assert(std::randomize(count) with {count inside {[1:14]};}) `uvm_info(get_name,$sformatf("count = %0d",count),UVM_DEBUG) else `uvm_fatal(get_name,"No Delay")
   endfunction
 
   virtual task body();
@@ -597,52 +576,43 @@ class alu_mult_time_sequence extends base_sequence; //*
       wait_for_item_done();
       valid_a = seq.inp_valid[0] ? 1'b1 : valid_a;
       valid_b = seq.inp_valid[1] ? 1'b1 : valid_b;
-      /*if(count == 0)
-        assert(std::randomize(count) with {count inside {[1:15]}}) else `uvm_fatal(get_name,"No Delay")
-      */
+
       if(valid_a && valid_b)
+      begin
+        valid_a = 0;
+        valid_b = 0;
+        seq.cmd.rand_mode(1);
+        seq.mode.rand_mode(1);
+        seq.inp_valid.rand_mode(1);
         previ.push_back({seq.mode,seq.cmd});
+      end
       sizing();
       strt();
     end
   endtask
 
   task strt();
-    if(count3 > 0)
-    begin
-      count3++;
-      seq.cmd.rand_mode(0);
-      seq.mode.rand_mode(0);
-      seq.inp_valid.rand_mode(1);
-      if(count3 > 3)
-      begin
-        seq.cmd.rand_mode(1);
-        seq.mode.rand_mode(1);
-        seq.inp_valid.rand_mode(1);
-        valid_a = 0;
-        valid_b = 0;
-        count3 = 0;
-        assert(std::randomize(count) with {count inside {[1:15]};}) `uvm_info(get_name,$sformatf("count = %0d",count),UVM_DEBUG) else `uvm_fatal(get_name,"No Delay")
-      end
-    end
-    else if(valid_a && valid_b)
-    begin
-      count = 0;
-      count3 = 1;
-    end
-    else if(count > 1)
+    if(count > 1)
     begin
       seq.cmd.rand_mode(0);
       seq.mode.rand_mode(0);
       seq.inp_valid.rand_mode(0);
       count--;
-      count3 = 0;
     end
-    else
+    else if(valid_a && valid_b)
+    begin
+      count = 0;
+      valid_a = 0;
+      valid_b = 0;
+      seq.cmd.rand_mode(1);
+      seq.mode.rand_mode(1);
+      seq.inp_valid.rand_mode(1);
+      assert(std::randomize(count) with {count inside {[1:14]};}) `uvm_info(get_name,$sformatf("count = %0d",count),UVM_DEBUG) else `uvm_fatal(get_name,"No Delay")
+    end
+    else if(count <= 1)
     begin
       seq.inp_valid.rand_mode(1);
       count = 0;
-      count3 = 0;
     end
   endtask
 
@@ -668,9 +638,9 @@ class alu_crn_mult_sequence extends base_sequence; //*
   virtual task body();
     while(previ.size > 0)
       void'(previ.pop_front());
-    seq = alu_sequence_item::type_id::create("mult_seq");
       $display("-------------------------------------------------------------MULTIPLICATION CORNER SEQUENCE STARTED-------------------------------------------------------------");
-    repeat(16) begin
+    seq = alu_sequence_item::type_id::create("mult_seq");
+    repeat(6) begin
       seq.normal_cmd_mode.constraint_mode(0);
       wait_for_grant();
       seq.exec = 9;
@@ -695,24 +665,6 @@ class alu_crn_mult_sequence extends base_sequence; //*
       if(count3 >= 3)
         previ.push_back({seq.mode,seq.cmd});
       sizing();
-      strt();
-    end
-  endtask
-
-  task strt();
-    if(count3 < 3)
-    begin
-      seq.cmd.rand_mode(0);
-      seq.mode.rand_mode(0);
-      seq.inp_valid.rand_mode(0);
-      count3++;
-    end
-    else if(count3 >= 3)
-    begin
-      seq.cmd.rand_mode(1);
-      seq.mode.rand_mode(1);
-      seq.inp_valid.rand_mode(1);
-      count3 = 0;
     end
   endtask
 
@@ -741,16 +693,6 @@ class regression_sequence extends base_sequence;
 
   function new(string name = "base_seq");
     super.new(name);
-    seq1  = alu_sequence::type_id::create("seq1");
-    seq2  = alu_glo_sequence::type_id::create("seq2");
-    seq3  = alu_err_sequence::type_id::create("seq3");
-    seq4  = alu_corner_sequence::type_id::create("seq4");
-    seq5  = alu_time_sequence::type_id::create("seq5");
-    seq6  = alu_w_time_sequence::type_id::create("seq6");
-    seq7  = alu_flag_sequence::type_id::create("seq7");
-    seq8  = alu_mult_sequence::type_id::create("seq8");
-    seq9  = alu_mult_time_sequence::type_id::create("seq9");
-    seq10 = alu_crn_mult_sequence::type_id::create("seq10");
   endfunction
 
   virtual task body();

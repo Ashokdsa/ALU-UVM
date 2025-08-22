@@ -1,7 +1,6 @@
 class alu_monitor extends uvm_monitor;
   bit flag;
   int count;
-  int count3;
   bit valid_a,valid_b;
   int i;
   alu_sequence_item temp;
@@ -43,72 +42,56 @@ class alu_monitor extends uvm_monitor;
         valid_a = flag && (seq_item.inp_valid[0]) ? 1'b1 : valid_a;
 
         valid_b = flag && (seq_item.inp_valid[1]) ? 1'b1 : valid_b;
+        `uvm_info(get_name,"READING INPUTS",UVM_DEBUG)
 
-        count3 = ((seq_item.cmd == temp.cmd)&&(seq_item.mode == temp.mode)) ? count3 : 0;
+        `uvm_info(get_name,$sformatf("1:FLAG = %0b, VALID_A = %0b, VALID_B = %0b",flag,valid_a,valid_b),UVM_DEBUG)
+        `uvm_info(get_name,$sformatf("3:COUNT = %0d",count),UVM_DEBUG)
 
-
-        if(seq_item.rst)
+        if(flag == 0)
         begin
-          count = 0;
-          count3 = 0;
-          valid_a = 0;
-          valid_b = 0;
-          repeat(2)@(vif.mon_cb);
-        end
-        else if(flag == 0)
-        begin
-          count = 0;
-          count3 = 0;
-          valid_a = 0;
-          valid_b = 0;
-          repeat(2)@(vif.mon_cb);
-        end
-        else if(count3 > 0)
-        begin
-          count3++;
+          $display("%0t | SINGLE OP",$time);
           count = 0;
           valid_a = 0;
           valid_b = 0;
-          if(count3 >= 3)
-          begin
-            count3 = 0;
-            repeat(1)@(vif.mon_cb);
-          end
           repeat(2)@(vif.mon_cb);
         end
         else if(valid_a && valid_b)
         begin
-          valid_a = 0;
-          valid_b = 0;
           count = 0;
           if(seq_item.mode && (seq_item.cmd == 9 || seq_item.cmd == 10))
           begin
-            count3 = 1;
+            $display("%0t | ENTERED MON MULT",$time);
+            repeat(1)@(vif.mon_cb);
           end
+          valid_a = 0;
+          valid_b = 0;
           repeat(2)@(vif.mon_cb);
         end
-        else if(count < 16 && (valid_a || valid_b))
+        else if(count < 15 && (valid_a || valid_b))
         begin
           $display("ENTERED BY MISTAKE");
+          count = ((seq_item.cmd == temp.cmd) && (seq_item.mode == temp.mode)) ? count+1:0;
           if(count == 0)
+          begin
+            $display("DELAYED");
             repeat(1)@(vif.mon_cb);
-          count++;
-          count3 = 0;
+          end
         end
-        else if(count >= 16)
+        else if(count >= 15)
         begin
+          $display("%0t | COUNT OUT",$time);
           count = 0;
-          count3 = 0;
           valid_a = 0;
           valid_b = 0;
           flag = 0;
-          @(vif.mon_cb);
+          repeat(2)@(vif.mon_cb);
         end
         else
+        begin
+          $display("%0t | UNKNOWN",$time);
           repeat(2)@(vif.mon_cb);
+        end
       end
-      else
-        @(vif.mon_cb);
 
       temp.cmd =seq_item.cmd;
       temp.mode = seq_item.mode;
@@ -123,7 +106,7 @@ class alu_monitor extends uvm_monitor;
       i = i + 1;
       `uvm_info(get_name,$sformatf("MON: RECIEVED %0d ITEM",i),UVM_MEDIUM);
       `uvm_info(get_name,$sformatf("FLAG = %0b, VALID_A = %0b, VALID_B = %0b",flag,valid_a,valid_b),UVM_MEDIUM)
-      `uvm_info(get_name,$sformatf("COUNT = %0d COUNT3 = %0d",count,count3),UVM_MEDIUM)
+      `uvm_info(get_name,$sformatf("COUNT = %0d",count),UVM_MEDIUM)
       if(get_report_verbosity_level() >= UVM_MEDIUM)
       begin
         if(seq_item.mode)
@@ -133,7 +116,6 @@ class alu_monitor extends uvm_monitor;
       end
       mon_item_collect_port.write(seq_item);
       `uvm_info(get_name,"SENT TO SCB",UVM_MEDIUM)
-      //@(vif.mon_cb);
     end
   endtask
 

@@ -16,12 +16,11 @@ class alu_test extends uvm_test;
     //base_sequence::type_id::set_type_override(alu_time_sequence::get_type());
     //base_sequence::type_id::set_type_override(alu_w_time_sequence::get_type());
     //base_sequence::type_id::set_type_override(alu_flag_sequence::get_type());
-    base_sequence::type_id::set_type_override(alu_mult_sequence::get_type());
+    //base_sequence::type_id::set_type_override(alu_mult_sequence::get_type());
     //base_sequence::type_id::set_type_override(alu_mult_time_sequence::get_type());
     //base_sequence::type_id::set_type_override(alu_crn_mult_sequence::get_type());
-    //base_sequence::type_id::set_type_override(regression_sequence::get_type());
+    base_sequence::type_id::set_type_override(regression_sequence::get_type());
     env = alu_environment::type_id::create("env",this);
-    set_config_int("env.agnt", "is_active", UVM_ACTIVE);
   endfunction
 
   function void end_of_elaboration();
@@ -33,7 +32,7 @@ class alu_test extends uvm_test;
     super.run_phase(phase);
     phase.raise_objection(this,"DRIVER BEGUN");
       seq = base_sequence::type_id::create("seq");
-      seq.start(env.agnt.seqr);
+      seq.start(env.agnt_a.seqr);
     phase.drop_objection(this,"DRIVER ENDED");
     phase_done.set_drain_time(this,20);
   endtask

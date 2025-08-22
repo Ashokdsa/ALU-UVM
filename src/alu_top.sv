@@ -3,6 +3,7 @@
 import uvm_pkg::*;
 import alu_pkg::*;
 `include "ALU_Design_16clock_cycles.v"
+`include "alu_assertion_cvg.sv"
 module top;
   bit clk;
 
@@ -12,6 +13,7 @@ module top;
 
   ALU_DESIGN#(8,4) DUT(.INP_VALID(intf.inp_valid),.OPA(intf.opa),.OPB(intf.opb),.CIN(intf.cin),.CLK(clk),.RST(intf.rst),.CMD(intf.cmd),.CE(intf.ce),.MODE(intf.mode),.COUT(intf.cout),.OFLOW(intf.oflow),.RES(intf.res),.G(intf.g),.E(intf.e),.L(intf.l),.ERR(intf.err));
 
+    bind intf alu_assertion_cvg ASSERT(.clk(clk),.rst(intf.rst),.ce(intf.ce),.opa(intf.opa),.opb(intf.opb),.mode(intf.mode),.inp_valid(intf.inp_valid),.cmd(intf.cmd),.cin(intf.cin),.res(intf.res));
   initial begin
     uvm_config_db#(virtual alu_interface)::set(null,"*","vif",intf);
     $dumpfile("wave.vcd");
