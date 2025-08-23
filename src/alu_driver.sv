@@ -52,12 +52,11 @@ class alu_driver extends uvm_driver#(alu_sequence_item);
 
       `uvm_info(get_name,$sformatf("INPUT VALID = %2b",req.inp_valid),UVM_DEBUG)
 
-      `uvm_info(get_name,$sformatf("1:FLAG = %0b, VALID_A = %0b, VALID_B = %0b",flag,valid_a,valid_b),UVM_MEDIUM)
-      `uvm_info(get_name,$sformatf("3:COUNT = %0d",count),UVM_MEDIUM)
+      `uvm_info(get_name,$sformatf("1:FLAG = %0b, VALID_A = %0b, VALID_B = %0b",flag,valid_a,valid_b),UVM_DEBUG)
+      `uvm_info(get_name,$sformatf("3:COUNT = %0d",count),UVM_DEBUG)
 
       if(flag == 0)
       begin
-        $display("%0t | DRV: SINGLE OP",$time);
         valid_a = 0;
         valid_b = 0;
         count = 0;
@@ -68,7 +67,6 @@ class alu_driver extends uvm_driver#(alu_sequence_item);
         count = 0;
         if(req.mode && (req.cmd == 9 || req.cmd == 10))
         begin
-          $display("%0t | ENTERED DRV MULT",$time);
           repeat(1)@(vif.mon_cb);
         end
         valid_a = 0;
@@ -77,7 +75,6 @@ class alu_driver extends uvm_driver#(alu_sequence_item);
       end
       else if(count < 15 && (valid_a || valid_b))
       begin
-        $display("ENTERED BY MISTAKE");
         count = ((req.cmd == temp.cmd) && (req.mode == temp.mode)) ? count+1:0;
         if(count == 0)
         begin
@@ -86,7 +83,6 @@ class alu_driver extends uvm_driver#(alu_sequence_item);
       end
       else if(count >= 15) 
       begin
-          $display("%0t |DRV: COUNT OUT",$time);
         count = 0;
         valid_a = 0;
         valid_b = 0;
@@ -95,7 +91,6 @@ class alu_driver extends uvm_driver#(alu_sequence_item);
       end
       else
       begin
-          $display("%0t |DRV: UNKNOWN",$time);
         repeat(2)@(vif.drv_cb);
       end
     end
@@ -105,8 +100,8 @@ class alu_driver extends uvm_driver#(alu_sequence_item);
 
     $display("\n--------------------------------------------------------------------------%0d-------------------------------------------------------------------------",i+1);
     `uvm_info(get_name,{"DRIVEN INPUTS"/*,req.sprint*/},UVM_MEDIUM)
-    `uvm_info(get_name,$sformatf("FLAG = %0b, VALID_A = %0b, VALID_B = %0b",flag,valid_a,valid_b),UVM_MEDIUM)
-    `uvm_info(get_name,$sformatf("COUNT = %0d",count),UVM_MEDIUM)
+    `uvm_info(get_name,$sformatf("FLAG = %0b, VALID_A = %0b, VALID_B = %0b",flag,valid_a,valid_b),UVM_DEBUG)
+    `uvm_info(get_name,$sformatf("COUNT = %0d",count),UVM_DEBUG)
     i++;
     if(get_report_verbosity_level() >= UVM_MEDIUM)
     begin

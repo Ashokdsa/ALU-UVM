@@ -49,7 +49,6 @@ class alu_monitor extends uvm_monitor;
 
         if(flag == 0)
         begin
-          $display("%0t | SINGLE OP",$time);
           count = 0;
           valid_a = 0;
           valid_b = 0;
@@ -60,7 +59,6 @@ class alu_monitor extends uvm_monitor;
           count = 0;
           if(seq_item.mode && (seq_item.cmd == 9 || seq_item.cmd == 10))
           begin
-            $display("%0t | ENTERED MON MULT",$time);
             repeat(1)@(vif.mon_cb);
           end
           valid_a = 0;
@@ -69,17 +67,14 @@ class alu_monitor extends uvm_monitor;
         end
         else if(count < 15 && (valid_a || valid_b))
         begin
-          $display("ENTERED BY MISTAKE");
           count = ((seq_item.cmd == temp.cmd) && (seq_item.mode == temp.mode)) ? count+1:0;
           if(count == 0)
           begin
-            $display("DELAYED");
             repeat(1)@(vif.mon_cb);
           end
         end
         else if(count >= 15)
         begin
-          $display("%0t | COUNT OUT",$time);
           count = 0;
           valid_a = 0;
           valid_b = 0;
@@ -88,7 +83,6 @@ class alu_monitor extends uvm_monitor;
         end
         else
         begin
-          $display("%0t | UNKNOWN",$time);
           repeat(2)@(vif.mon_cb);
         end
       end
@@ -105,14 +99,20 @@ class alu_monitor extends uvm_monitor;
 
       i = i + 1;
       `uvm_info(get_name,$sformatf("MON: RECIEVED %0d ITEM",i),UVM_MEDIUM);
-      `uvm_info(get_name,$sformatf("FLAG = %0b, VALID_A = %0b, VALID_B = %0b",flag,valid_a,valid_b),UVM_MEDIUM)
-      `uvm_info(get_name,$sformatf("COUNT = %0d",count),UVM_MEDIUM)
+      `uvm_info(get_name,$sformatf("FLAG = %0b, VALID_A = %0b, VALID_B = %0b",flag,valid_a,valid_b),UVM_DEBUG)
+      `uvm_info(get_name,$sformatf("COUNT = %0d",count),UVM_DEBUG)
       if(get_report_verbosity_level() >= UVM_MEDIUM)
       begin
         if(seq_item.mode)
+        begin
+          $display("RST = %0b CE = %0b\nINP_VALID = %2b\nOPA = %0d\nOPB = %0d CIN = %1b\nMODE = %1b CMD = %0s",seq_item.rst,seq_item.ce,seq_item.inp_valid,seq_item.opa,seq_item.opb,seq_item.cin,seq_item.mode,arith'(seq_item.cmd));
           $display("RESULT = %0d\nOFLOW = %1b COUT = %1b G = %1b L = %1b E = %1b",seq_item.res,seq_item.oflow,seq_item.cout,seq_item.g,seq_item.l,seq_item.e);
+        end
         else
+        begin
+          $display("RST = %0b CE = %0b\nINP_VALID = %2b\nOPA = %8b\nOPB = %8b CIN = %1b\nMODE = %1b CMD = %0s",seq_item.rst,seq_item.ce,seq_item.inp_valid,seq_item.opa,seq_item.opb,seq_item.cin,seq_item.mode,logical'(seq_item.cmd));
           $display("RESULT = %b\nOFLOW = %1b COUT = %1b G = %1b L = %1b E = %1b",seq_item.res,seq_item.oflow,seq_item.cout,seq_item.g,seq_item.l,seq_item.e);
+        end
       end
       mon_item_collect_port.write(seq_item);
       `uvm_info(get_name,"SENT TO SCB",UVM_MEDIUM)

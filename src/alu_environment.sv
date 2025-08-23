@@ -3,7 +3,6 @@ class alu_environment extends uvm_env;
   alu_agent agnt_p;
   alu_subscriber subs;
   alu_scoreboard scb;
-  alu_reference alu_ref;
   `uvm_component_utils(alu_environment)
 
   function new(string name = "env", uvm_component parent = null);
@@ -18,16 +17,14 @@ class alu_environment extends uvm_env;
     set_config_int("agnt_p", "is_active", UVM_PASSIVE);
     subs = alu_subscriber::type_id::create("subs",this);
     scb = alu_scoreboard::type_id::create("scb",this);
-    alu_ref = alu_reference::type_id::create("alu_ref",this);
   endfunction
 
   function void connect_phase(uvm_phase phase);
     super.connect_phase(phase);
-    agnt_a.mon.mon_item_collect_port.connect(alu_ref.drv_2_ref);
+    agnt_a.mon.mon_item_collect_port.connect(scb.mon_a_scb);
     agnt_a.mon.mon_item_collect_port.connect(subs.analysis_export);
     agnt_p.mon.mon_item_collect_port.connect(subs.subs_mon_op_item_collect_export);
-    agnt_p.mon.mon_item_collect_port.connect(scb.mon_2_scb);
-    alu_ref.ref_2_scb.connect(scb.ref_2_scb);
+    agnt_p.mon.mon_item_collect_port.connect(scb.mon_p_scb);
   endfunction
 
 endclass

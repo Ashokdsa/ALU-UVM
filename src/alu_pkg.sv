@@ -5,7 +5,6 @@ package alu_pkg;
   `include "alu_sequencer.sv"
   `include "alu_driver.sv"
   `include "alu_monitor.sv"
-  `include "alu_reference_model.sv"
   `include "alu_agent.sv"
   `include "alu_subscriber.sv"
   `include "alu_scoreboard.sv"
