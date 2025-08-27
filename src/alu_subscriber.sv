@@ -1,4 +1,3 @@
-//CHANGE THE SUBTRACTION COVERPOINT YOU CAN USE EQUATIONS
 `include "defines.svh"
 `uvm_analysis_imp_decl(_mon_op)
 
@@ -86,22 +85,27 @@ class alu_subscriber extends uvm_subscriber#(alu_sequence_item);
              }
     OPA: coverpoint drv.opa
              {
-               ignore_bins ign[] = {[0:total]};
+               option.weight = 0;
+               bins ign = {[0:total]};
+               bins high = {total};
              }
     OPB: coverpoint drv.opb
              {
-               ignore_bins ign[] = {[0:total]};
+               option.weight = 0;
+               bins ign = {[0:total]};
+               bins high = {total};
              }
     CMP_cross: cross OPA,OPB iff(!drv.rst && drv.ce && (drv.mode && drv.cmd == 8))
              {
-               bins greater = (binsof(OPA) && binsof(OPB))with(OPA>OPB);
-               bins lesser = (binsof(OPA) && binsof(OPB))with(OPA<OPB);
-               bins equal = (binsof(OPA) && binsof(OPB))with(OPA==OPB);
+               bins greater = (binsof(OPA.ign) && binsof(OPB.ign))with(OPA>OPB);
+               bins lesser = (binsof(OPA.ign) && binsof(OPB.ign))with(OPA<OPB);
+               bins equal = (binsof(OPA.ign) && binsof(OPB.ign))with(OPA==OPB);
              }
     ADD_MULT_cross: cross OPA,OPB iff(!drv.rst && drv.ce && (drv.mode && drv.cmd == 9))
              {
-               bins all_val = binsof(OPA) || binsof(OPB);
-               bins corner = binsof(OPA) intersect {total} || binsof(OPB) intersect {total};
+               option.goal = 65;
+               bins corner = binsof(OPA.high) || binsof(OPB.high);
+               bins all_val = binsof(OPA.ign);
              }
     mode_0_cp: coverpoint drv.inp_valid iff(!drv.rst && drv.ce && !(drv.mode))
              {
@@ -139,17 +143,17 @@ class alu_subscriber extends uvm_subscriber#(alu_sequence_item);
          }
     G: coverpoint mon.g iff(!mon.rst && mon.ce)
          {
-           bins zero = {0};
+           ignore_bins zero = {0};
            bins trigger = {1};
          }
     L: coverpoint mon.l iff(!mon.rst && mon.ce)
          {
-           bins zero = {0};
+           ignore_bins zero = {0};
            bins trigger = {1};
          }
     E: coverpoint mon.e iff(!mon.rst && mon.ce)
          {
-           bins zero = {0};
+           ignore_bins zero = {0};
            bins trigger = {1};
          }
     ERR: coverpoint mon.err iff(!mon.rst && mon.ce)
