@@ -21,7 +21,7 @@ interface alu_assertion_cvg(clk,rst,ce,opa,opb,mode,inp_valid,cmd,cin,res);
 
   property ALU_State;
     @(posedge clk)
-    !ce |=> res == $past(res);
+    !ce |=> $stable(res);
   endproperty
   ALU_SAME_STATE: assert property(ALU_State) else $error("OUTPUT CHANGED");
 
@@ -39,7 +39,7 @@ interface alu_assertion_cvg(clk,rst,ce,opa,opb,mode,inp_valid,cmd,cin,res);
 
   property ALU_clk_mult;
     @(posedge clk)
-    if(mode) cmd == SH_MUL || cmd == ADD_MUL |-> (cmd == SH_MUL throughout (delay_16 ##3 1)) or (cmd == ADD_MUL throughout (delay_16 ##3 1));
+    mode && (cmd == SH_MUL || cmd == ADD_MUL) |-> ((mode && cmd == SH_MUL) throughout (delay_16 ##2 1)) or ((mode && cmd == ADD_MUL) throughout (delay_16 ##2 1));
   endproperty
   ALU_CLK_MULT: assert property(ALU_clk_mult) else $error("MULTIPLICATION FAILED");
 

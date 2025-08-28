@@ -1,3 +1,4 @@
+`include "defines.svh"
 //BASE SEQUENCE TO BE OVERRIDEN
 class base_sequence extends uvm_sequence#(alu_sequence_item);
   `uvm_object_utils(base_sequence)
@@ -678,6 +679,83 @@ class alu_crn_mult_sequence extends base_sequence; //*
 
 endclass
 
+//ROR and ROL
+class alu_rotate_sequence extends base_sequence;
+  bit[`DWIDTH - 2 - `LOG2 : 0] temp[$];
+
+  int i; //just to go through all compares
+  `uvm_object_utils(alu_rotate_sequence)
+
+  function new(string name = "rotate_seq");
+    super.new(name);
+  endfunction
+
+  virtual task body();
+    while(previ.size > 0)
+      void'(previ.pop_front());
+    seq = alu_sequence_item::type_id::create("rotate_seq_item");
+      $display("-------------------------------------------------------------ROTATE SEQUENCE STARTED-------------------------------------------------------------");
+    repeat(34) begin
+      wait_for_grant();
+      seq.exec = 11;
+      seq.normal_cmd_mode.constraint_mode(0);
+      assert(seq.randomize() with 
+      {
+        seq.mode == 1'b0;
+        seq.cmd inside {12,13};
+
+        solve seq.cmd before seq.opb;
+
+        if(i == 0)
+          seq.opb == 0;
+        else
+          seq.opb[7:4] inside {[0:4'b1111]};
+
+        foreach(previ[i]) 
+          {seq.mode,seq.cmd} != previ[i];
+
+        foreach(temp[i])
+          seq.opb[7:4] != temp[i];
+      })
+      else
+        `uvm_fatal(get_name,"RANDOMIZATION FAILED")
+      if(i !=0)
+        temp.push_back(seq.opb[7:4]);
+      if(i <= 16)
+      begin
+        i++;
+        seq.mode.rand_mode(0);
+        seq.cmd.rand_mode(0);
+        seq.inp_valid.rand_mode(0);
+        if(i > 16)
+        begin
+          i = 0;
+          previ.push_back({seq.mode,seq.cmd});
+          seq.mode.rand_mode(1);
+          seq.cmd.rand_mode(1);
+          seq.inp_valid.rand_mode(1);
+          while(temp.size > 0)
+            void'(temp.pop_front());
+        end
+      end
+      send_request(seq);
+      wait_for_item_done();
+      sizing();
+      `uvm_info(get_name,"SEQUENCE SENT",UVM_DEBUG)
+    end
+  endtask
+
+  virtual function void sizing();
+    if(previ.size >= 2) //give the size for each test
+    begin
+      while(previ.size > 0)
+        void'(previ.pop_front);
+    end
+  endfunction 
+
+endclass
+
+
 class regression_sequence extends base_sequence;
     alu_sequence seq1;
     alu_glo_sequence seq2;
@@ -689,6 +767,7 @@ class regression_sequence extends base_sequence;
     alu_mult_sequence seq8;
     alu_mult_time_sequence seq9;
     alu_crn_mult_sequence seq10;
+    alu_rotate_sequence seq11;
   `uvm_object_utils(regression_sequence)
 
   function new(string name = "base_seq");
@@ -709,6 +788,7 @@ class regression_sequence extends base_sequence;
     `uvm_do(seq8)
     `uvm_do(seq9)
     `uvm_do(seq10)
+    `uvm_do(seq11)
   endtask
 
 endclass
